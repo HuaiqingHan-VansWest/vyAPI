@@ -8,6 +8,26 @@
 //Unauthorised person cannot access to the file
 
 defined('ABSPATH') or die('Unauthorised Access');
+$fileink;
+$json_data;
+// Action when plugin is activated
+register_activation_hook(__FILE__, 'vanswest_api_activation');
+function vanswest_api_activation() {
+    wp_schedule_event(strtotime('23:30:00'), 'daily', 'vanswest_api_daily_event');
+}
+
+// Action when plugin is deactivated
+register_deactivation_hook(__FILE__, 'vanswest_api_deactivation');
+function vanswest_api_deactivation() {
+    wp_clear_scheduled_hook('vanswest_api_daily_event');
+}
+
+// Action to call the function at the scheduled time
+add_action('vanswest_api_daily_event', 'vanswest_api_daily_task');
+function vanswest_api_daily_task() {
+    getJSON();
+}
+
 //action when login -- get the data from API
 add_action('admin_menu', 'add_admin_menu_section');
 function add_admin_menu_section(){
@@ -16,58 +36,6 @@ function add_admin_menu_section(){
     );
 }
 
-
-
-
-
-
-////////////////////////////Cron Job Part\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-//start a cron job 
-function cronJobStart(){
-    if(!wp_next_scheduled('getJSON')){
-        wp_schedule_event(time(),'daily','getJSON');
-    }
-}
-add_action('wp','cronJobStart');
-//deactivate the cron job
-function cronJobEnd(){
-    $timestamp = wp_next_scheduled('getJSON');
-    wp_unschedule_event($timestamp,'getJSON');
-}
-register_deactivation_hook(__FILE__,'cronJobEnd');
-//send the email to notice
-function repeatFunction(){
-    $email = 'korobeiniki@vanswest.com.au';
-    $subject = 'This is your Cron job Auto Message';
-    $message = 'API sent this message to you to check it works...';
-    $success = mail($email,$subject,$message);
-    if($success){
-        echo 'mail sent';
-    }else{
-        echo 'error';
-    }
-}
-add_action('getJSON', 'repeatFunction');
-//add custom interval
-function cron_add_daily($schedules){
-    //add once every day
-    $schedules['daily'] = array(
-        'interval' => 10,
-        'display' => __('Once per day')
-    );
-    return $schedules;
-}
-add_filter('cron_schedules','cron_add_daily');
-
-
-
-
-
-
-
-///////////////////////////////////The Function Part\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-$fileink;
-$json_data;
 function getJSON(){
     $url = 'https://dealers.virtualyard.com.au/api/v2/get.php?a=vehicles&key=OvtapBIat1bGjrrY2v1GesK8w4odENFJ5zyFYbX2Uoy5c8pqXXABJjvko7vrT3Y2EGbLXUtWMN37DO7NalSkzzGvI';
     $argument =array(
