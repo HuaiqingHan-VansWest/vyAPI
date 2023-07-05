@@ -8,10 +8,10 @@
 
 // Unauthorised person cannot access the file
 defined('ABSPATH') or die('Unauthorised Access');
-add_action('admin_init', 'vanswest_vy_api_start');
-function vanswest_vy_api_start(){
-    getJSON();
-}
+// add_action('admin_init', 'vanswest_vy_api_start');
+// function vanswest_vy_api_start(){
+//     getJSON();
+// }
 // function vanswest_api_add_six_hours_interval($schedules) {
 //     $schedules['six_hours'] = array(
 //         'interval' => 6 * HOUR_IN_SECONDS,
@@ -51,6 +51,7 @@ function add_admin_menu_section(){
     );
 }
 
+
 function getJSON(){
     $url = 'https://dealers.virtualyard.com.au/api/v2/get.php?a=vehicles&key=OvtapBIat1bGjrrY2v1GesK8w4odENFJ5zyFYbX2Uoy5c8pqXXABJjvko7vrT3Y2EGbLXUtWMN37DO7NalSkzzGvI';
     $argument = array(
@@ -67,6 +68,7 @@ function getJSON(){
 
     $json_data = json_decode(wp_remote_retrieve_body($response), true);
     echo 'File is updated at ' . date('Y-m-d H:i:s', time());
+
     write_to_file($json_data);
 }
 
