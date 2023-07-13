@@ -8,40 +8,42 @@
 
 // Unauthorised person cannot access the file
 defined('ABSPATH') or die('Unauthorised Access');
-// add_action('admin_init', 'vanswest_vy_api_start');
-// function vanswest_vy_api_start(){
-//     getJSON();
-// }
-// function vanswest_api_add_six_hours_interval($schedules) {
-//     $schedules['six_hours'] = array(
-//         'interval' => 6 * HOUR_IN_SECONDS,
-//         'display' => __('Every 6 Hours')
-//     );
-//     return $schedules;
-// }
-// // Register the six hours interval
-// add_filter('cron_schedules', 'vanswest_api_add_six_hours_interval');
 
-// //schedule cron job
-// function api_activate(){
-//     if(!wp_next_scheduled('')){
-//         wp_schedule_event(time(),'six_hours', 'custom_everyday_event');
-//     }
-// }
+function start_cron_job(){
+    if (!wp_next_scheduled('getJSON')){
+        wp_schedule_event(time(),'daily','getJSON');
+    }
+}
+add_action('wp','start_cron_job');
 
-// register_activation_hook(__FILE__,'api_activate');
+// unschedule event upon plugin deactivation
+function cronstarter_deactivate() {	
+	// find out when the last event was scheduled
+	$timestamp = wp_next_scheduled ('getJSON');
+	// unschedule previous event if any
+	wp_unschedule_event ($timestamp, 'getJSON');
+} 
+register_deactivation_hook (__FILE__, 'cronstarter_deactivate');
 
-// add_action('custom_everyday_event','custom_everyday_cronjob');
+// add custom interval
+function cron_add_day( $schedules ) {
+	// Adds once every minute to the existing schedules.
+    $schedules['twice_a_day'] = array(
+	    'interval' => 43200,
+	    'display' => __( 'twice Everyday' )
+    );
+    return $schedules;
+}
+add_filter( 'cron_schedules', 'cron_add_day' );
 
-// function custom_everyday_cronjob(){
-//     error_log(date('Y-m-d H:i:s',time()));
-//     add_option('custom_cron_run_at', date('Y-m-d H:i:s',time()));
-// };
-
-// function custom_deactivation(){
-//     wp_clear_scheduled_hook('custom_everyday_event');
-// }
-// register_deactivation_hook(__FILE__,'custom_deactivation');
+// create a scheduled event (if it does not exist already)
+function cronstarter_activation() {
+	if( !wp_next_scheduled( 'getJSON' ) ) {  
+	   wp_schedule_event( time(), 'twice_a_day', 'getJSON' );  
+	}
+}
+// and make sure it's called whenever WordPress loads
+add_action('wp', 'cronstarter_activation');
 
 // Action when login -- get the data from API
 add_action('admin_menu', 'add_admin_menu_section');
@@ -50,7 +52,6 @@ function add_admin_menu_section(){
         'VANSWEST API', 'API CSV', 'manage_options', 'vanswest_vy_api', 'vanswest_api_setting_page'
     );
 }
-
 
 function getJSON(){
     $url = 'https://dealers.virtualyard.com.au/api/v2/get.php?a=vehicles&key=OvtapBIat1bGjrrY2v1GesK8w4odENFJ5zyFYbX2Uoy5c8pqXXABJjvko7vrT3Y2EGbLXUtWMN37DO7NalSkzzGvI';
@@ -67,9 +68,8 @@ function getJSON(){
     }
 
     $json_data = json_decode(wp_remote_retrieve_body($response), true);
-    echo 'File is updated at ' . date('Y-m-d H:i:s', time());
-
-    write_to_file($json_data);
+    // echo json_encode($json_data);
+    // write_to_file($json_data);
 }
 
 function write_to_file($json_data) {
